@@ -89,7 +89,7 @@ type Handler struct {
 ```go
 
 import(
-	"olive.go"
+	"olive-go"
 	"net/http" // just for custom handlers
 )
 
