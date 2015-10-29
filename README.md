@@ -2,7 +2,7 @@
 Just a lightweight golang web application middleware
 
 # Author
-(Mohammed Al Ashaal, `a full-stack developer`)[http://www.alash3al.xyz]
+[Mohammed Al Ashaal, `a full-stack developer`](http://www.alash3al.xyz)
 
 # Structures
 `olive.go` is just a middleware that implements `http.Handler` interface, so you can use it as you want .
@@ -15,7 +15,7 @@ in `olive` there are just 3 structures:
 ```go
 
 type Context struct {
-	Req		*http.Request
+	Req	*http.Request
 	Res 	http.ResponseWriter
 	Args	[]string
 }
@@ -67,3 +67,62 @@ type Handler struct {
 ```
 
 > and the following methods
+
+```go
+ 
+ // --> add new route ?
+ // --> it returns a `*Route` so you can customize it as descriped above
+ Handler.HandleFunc(func(olive.Context))
+ 
+ // --> ServeHTTP
+ // its just an implementation of http.Handler
+ 
+ // --> ListenAndServe
+ Handler.ListenAndServe(addr string) error
+ 
+ // --> listenAndServeTLS
+ Handler.ListenAndServeTLS(addr string, certFile string, keyFile string) error
+```
+
+# Lets learn it
+
+```go
+
+import(
+	"olive.go"
+	"net/http" // just for custom handlers
+)
+
+func main() {
+	// initialize it
+	app := olive.NewHandler()
+	
+	// new handler for `localtest.me/hello-world`
+	// >> `localtest.me` is a free service that routes all requests to your own `localhost`
+	app.HandleFunc(func(o olive.Context){
+		o.Res.Write([]byte(`Hello World`))
+	}).SetPath(`hello-world`)
+
+	// new handler for `api.localtest.me/<anything>`
+	app.HandleFunc(func(o olive.Context){
+		o.Res.Write([]byte(`current path is ` + o.Args[0]))
+	}).SetPath(`?(.*?)`.SetVhost(`api.localhost.me`))
+
+	// new handler for `<anything>.localtest.me/<anything>`
+	app.HandleFunc(func(o olive.Context){
+		// vhost args will be the first in the args array
+		// path args will be the last in the args array
+		o.Res.Write([]byte(`current vhost is ` + o.Args[0] + `, path is ` + o.Args[1]))
+	}).SetPath(`?(.*?)`.SetVhost(`?(.*?).localhost.me`))
+
+	// new handler for `localtest.me/assets/` 
+	// to handle static files from `/root/www/`
+	app.HandleFunc(func(o olive.Context){
+		http.StripPrefix(`/assets/`, http.FileServer(http.Dir(`/root/www/`))).ServeHTTP(c.Res, c.Req)
+	}).SetPath(`assets`)
+
+	// listen on port '80'
+	app.ListenAndServe(`:80`)
+}
+
+```
