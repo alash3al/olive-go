@@ -17,6 +17,8 @@ type Context struct {
 	Args	[]string
 }
 
+// ---------------------
+
 // A Route is an olive handler with some properties
 type Route struct {
 	method		string
@@ -51,6 +53,8 @@ func (this *Route) SetHandler(fn func(Context)) *Route {
 	this.callback = fn
 	return this
 }
+
+// ---------------------
 
 // Our main middleware
 type Handler struct {
