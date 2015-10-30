@@ -108,6 +108,11 @@ func main() {
 		o.Res.Write([]byte(`current path is ` + o.Args[0]))
 	}).SetPath(`?(.*?)`).SetVhost(`api.localhost.me`)
 
+	// new handler for `POST api.localtest.me/auth/create`
+	app.HandleFunc(func(o olive.Context){
+		o.Res.Write([]byte(`current path is ` + o.Args[0]))
+	}).SetPath(`/auth/create`).SetVhost(`api.localhost.me`).SetMethod(`POST`)
+
 	// new handler for `<anything>.localtest.me/<anything>`
 	app.HandleFunc(func(o olive.Context){
 		// vhost args will be the first in the args array
