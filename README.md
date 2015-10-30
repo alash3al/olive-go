@@ -106,14 +106,14 @@ func main() {
 	// new handler for `api.localtest.me/<anything>`
 	app.HandleFunc(func(o olive.Context){
 		o.Res.Write([]byte(`current path is ` + o.Args[0]))
-	}).SetPath(`?(.*?)`.SetVhost(`api.localhost.me`))
+	}).SetPath(`?(.*?)`).SetVhost(`api.localhost.me`)
 
 	// new handler for `<anything>.localtest.me/<anything>`
 	app.HandleFunc(func(o olive.Context){
 		// vhost args will be the first in the args array
 		// path args will be the last in the args array
 		o.Res.Write([]byte(`current vhost is ` + o.Args[0] + `, path is ` + o.Args[1]))
-	}).SetPath(`?(.*?)`.SetVhost(`?(.*?).localhost.me`))
+	}).SetPath(`?(.*?)`).SetVhost(`?(.*?).localhost.me`)
 
 	// new handler for `localtest.me/assets/` 
 	// to handle static files from `/root/www/`
