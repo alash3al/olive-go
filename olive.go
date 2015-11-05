@@ -17,14 +17,12 @@ type Context struct {
 	Args	[]string
 }
 
-// ---------------------
-
 // A Route is an olive handler with some properties
 type Route struct {
 	method		string
 	vhost		string
 	path		*regexp.Regexp
-	callback	func(Context)
+	callback	func(*Context)
 }
 
 // set the "method" of the route
@@ -49,12 +47,10 @@ func (this *Route) SetPath(p string) *Route {
 }
 
 // set the main "handler" of the route
-func (this *Route) SetHandler(fn func(Context)) *Route {
+func (this *Route) SetHandler(fn func(*Context)) *Route {
 	this.callback = fn
 	return this
 }
-
-// ---------------------
 
 // Our main middleware
 type Handler struct {
@@ -69,7 +65,7 @@ func NewHandler() *Handler {
 }
 
 // Register a new Route
-func (this *Handler) HandleFunc(fn func(Context)) *Route {
+func (this *Handler) HandleFunc(fn func(*Context)) *Route {
 	r := &Route{}
 	r.SetMethod(`*`).SetVhost(`*`).SetPath(`/`).SetHandler(fn)
 	this.routes = append(this.routes, r)
@@ -91,7 +87,7 @@ func (this *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						args = append(args, regexp.MustCompilePOSIX(`^` + (route.vhost) + `$`).FindAllStringSubmatch(host, -1)[0][1:]...)
 					}
 					args = append(args, route.path.FindAllStringSubmatch(path, -1)[0][1:]...)
-					route.callback(Context{r, w, args})
+					route.callback(&Context{r, w, args})
 					break
 				}
 			}
