@@ -99,22 +99,22 @@ func main() {
 	
 	// new handler for `localtest.me/hello-world`
 	// >> `localtest.me` is a free service that routes all requests to your own `localhost`
-	app.HandleFunc(func(o olive.Context){
+	app.HandleFunc(func(o *olive.Context){
 		o.Res.Write([]byte(`Hello World`))
 	}).SetPath(`hello-world`)
 
 	// new handler for `api.localtest.me/<anything>`
-	app.HandleFunc(func(o olive.Context){
+	app.HandleFunc(func(o *olive.Context){
 		o.Res.Write([]byte(`current path is ` + o.Args[0]))
 	}).SetPath(`?(.*?)`).SetVhost(`api.localhost.me`)
 
 	// new handler for `POST api.localtest.me/auth/create`
-	app.HandleFunc(func(o olive.Context){
+	app.HandleFunc(func(o *olive.Context){
 		o.Res.Write([]byte(`current path is ` + o.Args[0]))
 	}).SetPath(`/auth/create`).SetVhost(`api.localhost.me`).SetMethod(`POST`)
 
 	// new handler for `<anything>.localtest.me/<anything>`
-	app.HandleFunc(func(o olive.Context){
+	app.HandleFunc(func(o *olive.Context){
 		// vhost args will be the first in the args array
 		// path args will be the last in the args array
 		o.Res.Write([]byte(`current vhost is ` + o.Args[0] + `, path is ` + o.Args[1]))
@@ -122,7 +122,7 @@ func main() {
 
 	// new handler for `localtest.me/assets/` 
 	// to handle static files from `/root/www/`
-	app.HandleFunc(func(o olive.Context){
+	app.HandleFunc(func(o *olive.Context){
 		http.StripPrefix(`/assets/`, http.FileServer(http.Dir(`/root/www/`))).ServeHTTP(c.Res, c.Req)
 	}).SetPath(`assets`)
 
