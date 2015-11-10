@@ -43,7 +43,7 @@ Just a very simple and elegant http(s) middleware (router)
 ```
 
 # Documentation
-[Godoc](https://godoc.org/github.com/alash3al/olive-go)
+Documentation is available on [Godoc](https://godoc.org/github.com/alash3al/olive-go) 
 
 # Installation
 `go get github.com/alash3al/olive-go`
