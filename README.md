@@ -19,8 +19,8 @@ Just a very simple and elegant http(s) middleware (router)
 		// Host = "*" --> any host
 		// "*" -> is the default value for each property
 		// Exclusive =  true, "true is the default"
-		// 				it means that once it matches the current request,
-		//				stop and don't run similar routes with the same request properties .
+		// 		it means that once it matches the current request,
+		//		stop and don't run similar routes with the same request properties .
 
 		app.Factory().SetPath("/tst").SetHost("*").SetMethod("*").SetFunc(func(c *olive.Context){
 			c.Res.Write([]byte("tst"))
