@@ -132,7 +132,7 @@ func (this *App) Factory() *Route {
 	return r
 }
 
-// Add a previously created route
+// Add previously created route(s)
 func (this *App) Add(routes ...*Route) *App {
 	this.routes = append(this.routes, routes...)
 	return this
