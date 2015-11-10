@@ -45,7 +45,7 @@ import (
 	"strings"
 )
 
-// A Context is the a request + response + <some properties>
+// A Context is the a request + response + route-arguments
 type Context struct {
 	Req  *http.Request
 	Res  http.ResponseWriter
