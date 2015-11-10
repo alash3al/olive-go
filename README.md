@@ -41,3 +41,9 @@ Just a very simple and elegant http(s) middleware (router)
 		// app.ListenAndServeTLS(":433", ........)
 	}
 ```
+
+# Documentation
+[Godoc](https://godoc.org/github.com/alash3al/olive-go)
+
+# Installation
+`go get github.com/alash3al/olive-go`
