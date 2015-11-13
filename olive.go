@@ -14,8 +14,8 @@
 		// Host = "*" --> any host
 		// "*" -> is the default value for each property
 		// Exclusive =  true, "true is the default"
-		// 		it means that once it matches the current request,
-		//		stop and don't run similar routes with the same request properties .
+		// 				it means that once it matches the current request,
+		//				stop and don't run similar routes with the same request properties .
 
 		app.Factory().SetPath("/tst").SetHost("*").SetMethod("*").SetFunc(func(c *olive.Context){
 			c.Res.Write([]byte("tst"))
@@ -28,7 +28,7 @@
 		app.Factory().SetPath("*").SetHost("cdn.mysite.com").SetHandler(http.FileServer(http.Dir(`/root/cdn/`)))
 
 		app.Add(
-			olive.NewRoute().SetPath("*"), // ... and so on
+			olive.NewRoute().SetPath("/new"), // ... and so on, multiple routes are supported
 		)
 
 		app.ListenAndServe(":80")
@@ -45,7 +45,7 @@ import (
 	"strings"
 )
 
-// A Context is the a request + response + route-arguments
+// A Context is the a request + response + <some properties>
 type Context struct {
 	Req  *http.Request
 	Res  http.ResponseWriter
@@ -132,9 +132,15 @@ func (this *App) Factory() *Route {
 	return r
 }
 
-// Add previously created route(s)
+// Add a previously created route
 func (this *App) Add(routes ...*Route) *App {
 	this.routes = append(this.routes, routes...)
+	return this
+}
+
+// Clear all routes
+func (this *App) Clear() *App {
+	this.routes = []*Route{}
 	return this
 }
 
