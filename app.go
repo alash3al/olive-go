@@ -53,7 +53,7 @@ import (
 // A App is a request middleware
 type App struct {
 	method    	string
-	hostname    string
+	hostname    	string
 	path      	string
 	useragent 	string
 	exclusive 	bool
