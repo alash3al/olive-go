@@ -1,195 +1,103 @@
+/* A lightweight simple web application micro framework */
 /*
-	Olive "Go", an advanced web-server framework written in Go .  
-
-	```
-		package main
-	
-		import ( "github.com/alash3al/olive-go"; "net/http" )
-	
-		func main(){
-			// lets set our base "localhost.me"
-			// this app will only work on "localhost.me/*"
-			// By default the hostname is "*"
-			// so it will work on any hostname, but here
-			// we change it to 'localhost.me' which is a free service
-			// that routes all requests to your own localhost server on port 80,
-			// you can use regex strings too .
-			app := olive.NewApp().SetHostname("localhost.me")
-	
-			// just like the main http library
-			// but we have more features such as "regex strings" .
-			// You can chain multiple handleFunc calls from this one easily .
-			app.HandleFunc(`/hello`, func(ctx *olive.Context){
-				ctx.WriteJSON(map[string]string{
-					"message": "hello world",
-				})
-			})
-	
-				// creating sub apps (routes) is so easy .
-				api := app.NewSubApp().SetHostname(`api.localtest.me`)
-	
-					// nested sub-apps
-					apiAuth := api.NewSubApp().SetPath(`/auth/?.*`)
-	
-					// login
-					apiAuth.HandleFunc(`/login`, func(ctx *Context){
-						ctx.WriteJSON(map[string]string{
-							"message": "login",
-						})
-					}).SetMethod(`POST`)
-	
-				// creating a cdn.localtest.me for handling our static files
-				app.NewSubApp().SetHostname(`cdn.localtest.me`).Handle(http.FileServer(http.Dir(`/path/to/static-dir/`)))
-	
-			app.ListenAndServe(":80")
-		}
-	```
+```
+	app := olive.NewApp()
+	app.Hostname(`api.localtest.me`)
+	app.HandleFunc(`/`, func(ctx *olive.Context){
+		ctx.WriteJSON(map[string]interface{}{
+			"status": true,
+			"message": "working",
+		})
+	})
+	app.Path(`/sub`, false)
+	app.HandleFunc(`page`, func(ctx *olive.Context) { //> api.localtest.me/sub/page
+		ctx.WriteString(`sub/page`)
+	})
+	app.Path(`/sub2`, true)
+	app.HandleFunc(`page`, func(ctx *olive.Context) { //> api.localtest.me/sub/sub2/page
+		ctx.WriteString(`sub/sub/page`)
+	})
+	app.Hostname(`www.localtest.me`)
+	app.Handle(`?.*`, http.FileServer(http.Dir(`.`))) //> www.localtest.me/*
+	app.ListenAndServe(`:80`)
+```
 */
 package olive
 
 import (
 	"net/http"
-	"strings"
 	"regexp"
 )
 
-// A App is a request middleware
+// A App is a request middle-ware .
 type App struct {
-	method    	string
-	hostname    	string
-	path      	string
-	useragent 	string
-	exclusive 	bool
-	callback  	func(*Context)
-	sub 		[]*App
+	routes 		[]*Route
+	path		string
+	hostname 	string
 }
 
-// Construct a new App instance
+// Construct a new App instance .
 func NewApp() *App {
-	r := &App{}
-	r.SetPath("*").SetMethod("*").SetHostname("*").SetUserAgent("*").SetExclusive(false).sub = []*App{}
+	this := &App{}
+	this.routes = []*Route{}
+	this.path = `/`
+	this.hostname = `*`
+	return this
+}
+
+// Global hostname .
+func (this *App) Hostname(hostname string) *App {
+	this.hostname = hostname
+	return this
+}
+
+// Global path
+func (this *App) Path(path string, append bool) *App {
+	if append {
+		this.path += `/` + path
+	} else {
+		this.path = path
+	}
+	return this
+}
+
+// Add a custom handler .
+func (this *App) HandleFunc(path string, fn func(*Context)) *Route {
+	r := new(Route)
+	r.path = regexp.MustCompile(`/+`).ReplaceAllString(`/` + this.path + `/` + path + `/`, `/`)
+	r.callback = fn
+	r.Hostname(this.hostname).Method(`*`).Exclusive(true)
+	this.routes = append(this.routes, r)
 	return r
 }
 
-// Add a sub-router, useful for nested routes of routes
-// it returns the new sub route .
-func (this *App) NewSubApp() *App {
-	sub := NewApp()
-	sub.SetPath(this.path).SetHostname(this.hostname).SetMethod(this.method).callback = func(c *Context) { sub.ServeHTTP(c.Res, c.Req) }
-	this.sub = append(this.sub, sub)
-	return sub
-}
-
-// Set the "method" of the route
-// `*` means any request method
-func (this *App) SetMethod(m string) *App {
-	this.method = strings.TrimSpace(strings.ToUpper(m))
-	return this
-}
-
-// Set the hostname of the router
-// `*` means any hostname
-func (this *App) SetHostname(v string) *App {
-	this.hostname = strings.TrimSpace(v)
-	return this
-}
-
-// Set the "path" of the router,
-// `*` means any path .
-func (this *App) SetPath(p string) *App {
-	p = strings.TrimSpace(p)
-	if p != "*" {
-		p = regexp.MustCompile(`/+`).ReplaceAllString((`/` + p + `/`), `/`)
-		this.path = regexp.MustCompile(`/+`).ReplaceAllString((`/` + strings.TrimSpace(p) + `/`), `/`)
-	} else {
-		this.path = p
-	}
-	return this
-}
-
-// Set the user-agent of this router,
-// `*` means any path .
-func (this *App) SetUserAgent(ua string) *App {
-	this.useragent = strings.TrimSpace(ua)
-	return this
-}
-
-// Just stop when the current request matches this route and don't run other similar routes ?
-func (this *App) SetExclusive(s bool) *App {
-	this.exclusive = s
-	return this
-}
-
-// Add the handler-func of the route
-func (this *App) HandleFunc(path string, fn func(*Context)) *App {
-	sub := NewApp()
-	parentPath := this.path
-	if this.path == `*` {
-		parentPath = `/`
-	}
-	sub.SetMethod(this.method).SetHostname(this.hostname).SetPath(regexp.MustCompile(`/+`).ReplaceAllString(parentPath + `/` + path, `/`)).callback = fn
-	this.sub = append(this.sub, sub)
-	return sub
-}
-
-// Add a http.Handler
-func (this *App) Handle(path string, h http.Handler) *App {
+// Add a http.Handler .
+func (this *App) Handle(path string, h http.Handler) *Route {
 	return this.HandleFunc(path, func(c *Context){ h.ServeHTTP(c.Res, c.Req) })
 }
 
-// Check whether this route matches the provided context or not 
-func (this App) Match(ctx *Context) bool {
-	var method = ctx.Req.Method
-	var hostname = strings.SplitN(ctx.Req.Host, `:`, 2)[0]
-	var path = regexp.MustCompile(`/+`).ReplaceAllString(`/`+ ctx.Req.URL.Path +`/`, `/`)
-	var ua = ctx.Req.Header.Get(`User-Agent`)
-	if this.useragent != "*" && ! regexp.MustCompile(`^(?i)`+ this.useragent +`$`).MatchString(ua) {
-		return false
-	}
-	if this.method != "*" && ! regexp.MustCompile(`^(?i)`+ this.method +`$`).MatchString(method) {
-		return false
-	}
-	if this.hostname != "*" && ! regexp.MustCompile(`^(?i)`+ this.hostname +`$`).MatchString(hostname) {
-		return false
-	}
-	if this.path != "*" && ! regexp.MustCompile(`^`+ this.path +`$`).MatchString(path) {
-		return false
-	}
-	return true
-}
-
-// Call this route callback .
-func (this App) Call(ctx *Context) bool {
-	var hostname = strings.SplitN(ctx.Req.Host, `:`, 2)[0]
-	var path = regexp.MustCompile(`/+`).ReplaceAllString(`/`+ ctx.Req.URL.Path +`/`, `/`)
-	ctx.Args.Hostname = regexp.MustCompile(`^(?i)`+ this.hostname +`$`).FindAllStringSubmatch(hostname, -1)[0][1:]
-	ctx.Args.Path = regexp.MustCompile(`^`+ this.path +`$`).FindAllStringSubmatch(path, -1)[0][1:]
-	this.callback(ctx)
-	return this.exclusive
-}
-
-// Apply all childes .
+// Find route that matches the current context .
 func (this App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := new(Context)
 	ctx.Res, ctx.Req = w, r
-	for _, sub := range this.sub {
-		if sub.Match(ctx) && sub.Call(ctx) {
+	for _, route := range this.routes {
+		if route.matches(ctx) && route.apply(ctx) {
 			break
 		}
 	}
 }
 
-// serving HTTP traffic
+// serving HTTP traffic .
 func (this App) ListenAndServe(addr string) error {
 	return http.ListenAndServe(addr, this)
 }
 
-// serving HTTPS traffic
+// serving HTTPS traffic .
 func (this App) ListenAndServeTLS(addr string, certFile string, keyFile string) error {
 	return http.ListenAndServeTLS(addr, certFile, keyFile, this)
 }
 
-// serving both http & https traffic
+// serving both http & https traffic .
 func (this App) ListenAndServeBoth(httpAddr, httpsAddr, certFile string, keyFile string) error {
 	err := make(chan error, 1)
 	go func(){
