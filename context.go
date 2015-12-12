@@ -1,7 +1,7 @@
 package olive
 
 import (
-	"fmt"
+	"io"
 	"net/url"
 	"net/http"
 	"encoding/json"
@@ -53,25 +53,23 @@ func (this *Context) Write(d []byte) *Context {
 	return this
 }
 
-// Write the specified interface{} as a json-data .
-func (this *Context) WriteJSON(d interface{}) *Context {
-	this.Res.Header().Set(`Content-Type`, `application/json; charset=UTF-8`)
-	j, _ := json.MarshalIndent(d, ``, `   `)
-	this.Res.Write(j)
-	return this
-}
-
-// Write the specified interface{} as a jsonp with the specified function name .
-func (this *Context) WriteJSONP(d interface{}, fn string) *Context {
-	this.Res.Header().Set(`Content-Type`, `application/javascript; charset=UTF-8`)
-	j, _ := json.MarshalIndent(d, ``, `   `)
-	this.Res.Write([]byte(fmt.Sprintf(`%s(%s)`, fn, string(j))))
+// Write stream to the client .
+func (this *Context) WriteStream(stream io.Reader) *Context {
+	io.Copy(this.Res, stream)
 	return this
 }
 
 // Write a string to the response body .
 func (this *Context) WriteString(d string) *Context {
 	this.Res.Write([]byte(d))
+	return this
+}
+
+// Write the specified interface{} as a json-data .
+func (this *Context) WriteJSON(d interface{}) *Context {
+	this.Res.Header().Set(`Content-Type`, `application/json; charset=UTF-8`)
+	j, _ := json.MarshalIndent(d, ``, `   `)
+	this.Res.Write(j)
 	return this
 }
 
