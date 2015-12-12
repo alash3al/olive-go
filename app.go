@@ -38,6 +38,9 @@
 						})
 					}).SetMethod(`POST`)
 	
+				// creating a cdn.localtest.me for handling our static files
+				app.NewSubApp().SetHostname(`cdn.localtest.me`).Handle(http.FileServer(http.Dir(`/path/to/static-dir/`)))
+	
 			app.ListenAndServe(":80")
 		}
 	```
@@ -117,7 +120,7 @@ func (this *App) SetExclusive(s bool) *App {
 	return this
 }
 
-// Add the child-handler-func of the route
+// Add the handler-func of the route
 func (this *App) HandleFunc(path string, fn func(*Context)) *App {
 	sub := NewApp()
 	parentPath := this.path
@@ -129,7 +132,7 @@ func (this *App) HandleFunc(path string, fn func(*Context)) *App {
 	return sub
 }
 
-// Add a sub-handler
+// Add a http.Handler
 func (this *App) Handle(path string, h http.Handler) *App {
 	return this.HandleFunc(path, func(c *Context){ h.ServeHTTP(c.Res, c.Req) })
 }
