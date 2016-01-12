@@ -15,40 +15,35 @@ Just a lightweight golang web application middleware
 ```go
 	package main
 
-	import ( "github.com/alash3al/olive-go"; "net/http" )
+	import "net/http"
+	import "github.com/alash3al/olive-go"
 
-	func main(){
-		// lets set our base "localhost.me"
-		// this app will only work on "localhost.me/*"
-		// By default the hostname is "*"
-		// so it will work on any hostname, but here
-		// we change it to 'localhost.me' which is a free service
-		// that routes all requests to your own localhost server on port 80,
-		// you can use regex strings too .
-		app := olive.NewApp().SetHostname("localhost.me")
-
-		// just like the main http library
-		// but we have more features such as "regex strings" .
-		// You can chain multiple handleFunc calls from this one easily .
-		app.HandleFunc(`/hello`, func(ctx *olive.Context){
-			ctx.WriteJSON(map[string]string{
-				"message": "hello world",
+	func main() {
+		olive.New().GET("/", func(ctx *olive.Context) bool {
+			ctx.Res.Write([]byte("index"))
+			return false
+		}).CONNECT("/", func(ctx *olive.Context) bool {
+			// olive automatically catch any panic and recover it to the 
+			// "stdout" using "log" package .
+			panic("connect method !")
+			return false
+		}).ANY("/page/?(.*?)", func(ctx *olive.Context) bool {
+			ctx.Res.Write([]byte("i'm the parent \n"))
+			return true
+		}).GET("/page", func(ctx *olive.Context) bool {
+			ctx.Res.Write([]byte("page"))
+			return false
+		}).GET("/page/([^/]+)/and/([^/]+)", func(ctx *olive.Context) bool {
+			ctx.Res.Write([]byte(ctx.Params[0] + " " + ctx.Params[1]))
+			return false
+		}).Group("/api/v1", func(ApiV1 *olive.App){
+			ApiV1.GET("/ok", func(ctx *olive.Context) bool {
+				ctx.Res.Write([]byte("api/v1/ok"))
+				return false
+			}).GET("/page/([^/]+)/and/([^/]+)", func(ctx *olive.Context) bool {
+				ctx.Res.Write([]byte("api/v1/ " + ctx.Params[0] + " " + ctx.Params[1]))
+				return false
 			})
-		})
-
-			// creating sub apps (routes) is so easy .
-			api := app.NewSubApp().SetHostname(`api.localtest.me`)
-
-				// nested sub-apps
-				apiAuth := api.NewSubApp().SetPath(`/auth/?.*`)
-
-				// login
-				apiAuth.HandleFunc(`/login`, func(ctx *Context){
-					ctx.WriteJSON(map[string]string{
-						"message": "login",
-					})
-				}).SetMethod(`POST`)
-
-		app.ListenAndServe(":80")
+		}).ANY("?.*?", olive.Handler(http.NotFoundHandler(), false)).Listen(":80")
 	}
 ```
