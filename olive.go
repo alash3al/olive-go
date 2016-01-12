@@ -97,61 +97,61 @@ func (self *App) METHOD(method, path string, cb callback) *App {
 	return self
 }
 
-// Handle ANY request method for the specified path with the specified callback  
-// NOTE: this is based on "func(self *App) METHOD()"  
+// Handle ANY request method for the specified path with the specified callback;  
+// NOTE: this is based on "func(self *App) METHOD()"
 func (self *App) ANY(path string, cb callback) *App {
 	return self.METHOD("(.*?)", path, cb)
 }
 
-// Handle GET request for the specified path with the specified callback  
+// Handle GET request for the specified path with the specified callback;  
 // NOTE: this is based on "func(self *App) METHOD()"  
 func (self *App) GET(path string, cb callback) *App {
 	return self.METHOD("GET", path, cb)
 }
 
-// Handle POST request for the specified path with the specified callback  
+// Handle POST request for the specified path with the specified callback;  
 // NOTE: this is based on "func(self *App) METHOD()"  
 func (self *App) POST(path string, cb callback) *App {
 	return self.METHOD("POST", path, cb)
 }
 
-// Handle PUT request for the specified path with the specified callback  
+// Handle PUT request for the specified path with the specified callback;  
 // NOTE: this is based on "func(self *App) METHOD()"  
 func (self *App) PUT(path string, cb callback) *App {
 	return self.METHOD("PUT", path, cb)
 }
 
-// Handle PATCH request for the specified path with the specified callback  
+// Handle PATCH request for the specified path with the specified callback;  
 // NOTE: this is based on "func(self *App) METHOD()"  
 func (self *App) PATCH(path string, cb callback) *App {
 	return self.METHOD("PATCH", path, cb)
 }
 
-// Handle HEAD request for the specified path with the specified callback  
+// Handle HEAD request for the specified path with the specified callback;  
 // NOTE: this is based on "func(self *App) METHOD()"  
 func (self *App) HEAD(path string, cb callback) *App {
 	return self.METHOD("HEAD", path, cb)
 }
 
-// Handle DELETE request for the specified path with the specified callback  
+// Handle DELETE request for the specified path with the specified callback;  
 // NOTE: this is based on "func(self *App) METHOD()"  
 func (self *App) DELETE(path string, cb callback) *App {
 	return self.METHOD("DELETE", path, cb)
 }
 
-// Handle OPTIONS request for the specified path with the specified callback  
+// Handle OPTIONS request for the specified path with the specified callback;  
 // NOTE: this is based on "func(self *App) METHOD()"  
 func (self *App) OPTIONS(path string, cb callback) *App {
 	return self.METHOD("OPTIONS", path, cb)
 }
 
-// Handle TRACE request for the specified path with the specified callback  
+// Handle TRACE request for the specified path with the specified callback;  
 // NOTE: this is based on "func(self *App) METHOD()"  
 func (self *App) TRACE(path string, cb callback) *App {
 	return self.METHOD("TRACE", path, cb)
 }
 
-// Handle CONNECT request for the specified path with the specified callback  
+// Handle CONNECT request for the specified path with the specified callback;  
 // NOTE: this is based on "func(self *App) METHOD()"  
 func (self *App) CONNECT(path string, cb callback) *App {
 	return self.METHOD("CONNECT", path, cb)
