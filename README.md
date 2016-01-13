@@ -21,6 +21,8 @@ Just a lightweight golang web application middleware
 	func main() {
 		olive.New().GET("/", func(ctx *olive.Context) bool {
 			ctx.Res.Write([]byte("index"))
+			// return false = "don't run the next matched route with the same method and pattern if any"
+			// this feature allows yout to run multiple routes with the same properties
 			return false
 		}).CONNECT("/", func(ctx *olive.Context) bool {
 			// olive automatically catch any panic and recover it to the 
