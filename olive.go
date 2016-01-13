@@ -8,6 +8,8 @@
 	func main() {
 		olive.New().GET("/", func(ctx *olive.Context) bool {
 			ctx.Res.Write([]byte("index"))
+			// return false = "don't run the next matched route with the same method and pattern if any"
+			// this feature allows yout to run multiple routes with the same properties
 			return false
 		}).CONNECT("/", func(ctx *olive.Context) bool {
 			// olive automatically catch any panic and recover it to the 
@@ -85,9 +87,9 @@ func (self *App) Group(path string, fn gfn) *App {
 	return self
 }
 
-// Handle the specified custom method for the specified path  
-// NOTE: method could be a "regexp string"  
-// NOTE: path could be a "regexp string"  
+// Handle the specified custom method for the specified path;  
+// NOTE: method could be a "regexp string";  
+// NOTE: path could be a "regexp string";  
 func (self *App) METHOD(method, path string, cb callback) *App {
 	self.routes = append(self.routes, route{
 		method: strings.ToUpper(strings.TrimSpace(method)),
@@ -197,7 +199,8 @@ func (self App) ListenTLS(addr string, certFile string, keyFile string) error {
 	return http.ListenAndServeTLS(addr, certFile, keyFile, self)
 }
 
-// Convert any http.Handler compatible handler to an internal callback
+// Convert any http.Handler compatible handler to an internal callback,
+// and rtrn is what will be returned for "[don't]run the next matched route with the same method and patttern"
 func Handler(h http.Handler, rtrn bool) callback {
 	return func(ctx *Context) bool {
 		h.ServeHTTP(ctx.Res, ctx.Req)
