@@ -17,13 +17,13 @@
 			panic("connect method !")
 			return false
 		}).ANY("/page/?(.*?)", func(ctx *olive.Context) bool {
-			ctx.Res.Write([]byte("i'm the parent \n"))
+			ctx.Send("i'm the parent \n")
 			return true
 		}).GET("/page", func(ctx *olive.Context) bool {
-			ctx.Res.Write([]byte("page"))
+			ctx.Send([]byte("hi !"))
 			return false
 		}).GET("/page/([^/]+)/and/([^/]+)", func(ctx *olive.Context) bool {
-			ctx.Res.Write([]byte(ctx.Params[0] + " " + ctx.Params[1]))
+			ctx.Send(ctx.Params)
 			return false
 		}).Group("/api/v1", func(ApiV1 *olive.App){
 			ApiV1.GET("/ok", func(ctx *olive.Context) bool {
@@ -40,7 +40,7 @@
 package olive
 
 // we only need these package
-import("log"; "regexp"; "strings"; "net/http")
+import("io"; "log"; "regexp"; "strings"; "net/url"; "net/http"; "encoding/json")
 
 // a route callback
 type callback func(*Context)bool
@@ -54,6 +54,8 @@ type route struct {
 	cb callback
 }
 
+// ---------------------
+
 // A request context and properties
 type Context struct {
 	Req		*http.Request
@@ -61,6 +63,86 @@ type Context struct {
 	Params 	[]string
 	Vars	map[string]interface{}
 }
+
+// Set the status code
+func (self *Context) SetStatus(code int) {
+	self.Res.WriteHeader(code)
+}
+
+// Set a http header field
+func (self *Context) SetHeader(k, v string) {
+	self.Res.Header().Set(k, v)
+}
+
+// Set multiple http header(s)
+func (self *Context) SetHeaders(h map[string]string) {
+	for k, v := range h {
+		self.Res.Header().Set(k, v)
+	}
+}
+
+// Add a header field
+func (self *Context) AddHeader(k, v string) {
+	self.Res.Header().Add(k, v)
+}
+
+// Add multiple header fields
+func (self *Context) AddHeaders(h map[string]string) {
+	for k, v := range h {
+		self.Res.Header().Add(k, v)
+	}
+}
+
+// Write to the client, this function will detect the type of the data
+// it will send the data as json if the specified input isn't (string, []byte and io.Reader) .
+func (self *Context) Send(d interface{}) {
+	switch d.(type) {
+		case []byte:
+			self.Res.Write(d.([]byte))
+		case string:
+			self.Res.Write([]byte(d.(string)))
+		case io.Reader:
+			io.Copy(self.Res, d.(io.Reader))
+		default:
+			self.SetHeader("Content-Type", "application/json; charset=utf-8")
+			json.NewEncoder(self.Res).Encode(d)
+	}
+}
+
+// Send a file to the client
+func (self *Context) SendFile(filename string) {
+	http.ServeFile(self.Res, self.Req, filename)
+}
+
+// Redirect to another url
+func (self Context) Redirect(url string, code int) {
+	http.Redirect(self.Res, self.Req, url, code)
+}
+
+// Get the specified header field
+func (self Context) GetHeader(k string) string {
+	return self.Req.Header.Get(k)
+}
+
+func (self Context) Query() url.Values {
+	return self.Req.URL.Query()
+}
+
+// Read the request body into the provided variable, it will read the body as json
+// if the specified "v" isn't ([]byte, io.Writer) .
+func (self Context) Body(v interface{}, max int64) (err error) {
+	switch v.(type) {
+		case []byte:
+			_, err = http.MaxBytesReader(self.Res, self.Req.Body, max).Read(v.([]byte))
+		case io.Writer:
+			_, err = io.Copy(v.(io.Writer), http.MaxBytesReader(self.Res, self.Req.Body, max))
+		default:
+			err = json.NewDecoder(http.MaxBytesReader(self.Res, self.Req.Body, max)).Decode(v)
+	}
+	return err
+}
+
+// ---------------------
 
 // Our main structure
 type App struct {
