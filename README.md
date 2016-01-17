@@ -13,39 +13,48 @@ Just a lightweight golang web application middleware
 
 # Quick overview:
 ```go
-	package main
+package main
 
-	import "net/http"
-	import "github.com/alash3al/olive-go"
+import "net/http"
+import "github.com/alash3al/olive-go"
 
-	func main() {
-		olive.New().GET("/", func(ctx *olive.Context) bool {
-			ctx.Res.Write([]byte("index"))
-			// return false = "don't run the next matched route with the same method and pattern if any"
-			// this feature allows yout to run multiple routes with the same properties
-			return false
-		}).CONNECT("/", func(ctx *olive.Context) bool {
-			// olive automatically catch any panic and recover it to the 
-			// "stdout" using "log" package .
-			panic("connect method !")
-			return false
-		}).ANY("/page/?(.*?)", func(ctx *olive.Context) bool {
-			ctx.Res.Write([]byte("i'm the parent \n"))
-			return true
-		}).GET("/page", func(ctx *olive.Context) bool {
-			ctx.Res.Write([]byte("page"))
+func main() {
+	olive.New().GET("/", func(ctx *olive.Context) bool {
+		ctx.SetBody("index")
+		// return false = "don't run the next matched route with the same method and pattern if any"
+		// this feature allows you to run multiple routes with the same properties
+		return false
+	}).ANY("/page/?(.*?)", func(ctx *olive.Context) bool {
+		ctx.SetBody("i'm the parent \n")
+		return true
+	}).GET("/page", func(ctx *olive.Context) bool {
+		ctx.SetBody([]byte("hi !"))
+		return false
+	}).POST("/page/([^/]+)/and/([^/]+)", func(ctx *olive.Context) bool {
+		var input map[string]string
+		ctx.GetBody(&input, 512) // parse the request body into {input} and returns error if any
+		ctx.SetBody(ctx.Params)
+		return false
+	}).GroupBy("path", "/api/v1", func(ApiV1 *olive.App){
+		ApiV1.GET("/ok", func(ctx *olive.Context) bool {
+			ctx.Res.Write([]byte("api/v1/ok"))
 			return false
 		}).GET("/page/([^/]+)/and/([^/]+)", func(ctx *olive.Context) bool {
-			ctx.Res.Write([]byte(ctx.Params[0] + " " + ctx.Params[1]))
+			ctx.Res.Write([]byte("api/v1/ " + ctx.Params[0] + " " + ctx.Params[1]))
 			return false
-		}).Group("/api/v1", func(ApiV1 *olive.App){
-			ApiV1.GET("/ok", func(ctx *olive.Context) bool {
-				ctx.Res.Write([]byte("api/v1/ok"))
-				return false
-			}).GET("/page/([^/]+)/and/([^/]+)", func(ctx *olive.Context) bool {
-				ctx.Res.Write([]byte("api/v1/ " + ctx.Params[0] + " " + ctx.Params[1]))
-				return false
-			})
-		}).ANY("?.*?", olive.Handler(http.NotFoundHandler(), false)).Listen(":80")
-	}
+		})
+	}).ANY("?.*?", olive.Handler(http.NotFoundHandler(), false)).Listen(":80")
+}
 ```
+
+# Changes
+**Version 2.0**
+- removed panics handler
+- removed `Context.AddHeaders()` and `Context.SetHeaders()`
+- added `Context.DelHeader()`
+- renamed `Context.Query()` to `Context.GetQuery()`
+- renamed `Context.Body()` to `Context.GetBody()`
+- renamed `Context.Send()` to `Context.SetBody()`
+- added support for html templates in `Context.SetBody()`
+- renamed `App.Group()` to `App.GroupBy`
+- add support for custom vhost routing
