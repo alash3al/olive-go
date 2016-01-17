@@ -9,7 +9,7 @@
 		olive.New().GET("/", func(ctx *olive.Context) bool {
 			ctx.SetBody("index")
 			// return false = "don't run the next matched route with the same method and pattern if any"
-			// this feature allows yout to run multiple routes with the same properties
+			// this feature allows you to run multiple routes with the same properties
 			return false
 		}).ANY("/page/?(.*?)", func(ctx *olive.Context) bool {
 			ctx.SetBody("i'm the parent \n")
