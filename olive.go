@@ -1,43 +1,8 @@
-// Olive (v2.0) A tiny http framework perfect for building web services, created by Mohammed Al Ashaal (http://alash3al.xyz) under MIT License .
-/**
-	package main
-
-	import "net/http"
-	import "github.com/alash3al/olive-go"
-
-	func main() {
-		olive.New().GET("/", func(ctx *olive.Context) bool {
-			ctx.SetBody("index")
-			// return false = "don't run the next matched route with the same method and pattern if any"
-			// this feature allows you to run multiple routes with the same properties
-			return false
-		}).ANY("/page/?(.*?)", func(ctx *olive.Context) bool {
-			ctx.SetBody("i'm the parent \n")
-			return true
-		}).GET("/page", func(ctx *olive.Context) bool {
-			ctx.SetBody([]byte("hi !"))
-			return false
-		}).POST("/page/([^/]+)/and/([^/]+)", func(ctx *olive.Context) bool {
-			var input map[string]string
-			ctx.GetBody(&input, 512) // parse the request body into {input} and returns error if any
-			ctx.SetBody(ctx.Params)
-			return false
-		}).GroupBy("path", "/api/v1", func(ApiV1 *olive.App){
-			ApiV1.GET("/ok", func(ctx *olive.Context) bool {
-				ctx.Res.Write([]byte("api/v1/ok"))
-				return false
-			}).GET("/page/([^/]+)/and/([^/]+)", func(ctx *olive.Context) bool {
-				ctx.Res.Write([]byte("api/v1/ " + ctx.Params[0] + " " + ctx.Params[1]))
-				return false
-			})
-		}).ANY("?.*?", olive.Handler(http.NotFoundHandler(), false)).Listen(":80")
-	}
-
-*/
+// Olive Version 3.0
 package olive
 
 // we only need these package
-import("io"; "regexp"; "strings"; "net/url"; "net/http"; "encoding/json"; "html/template")
+import("io"; "io/ioutil"; "regexp"; "strings"; "net/url"; "net/http"; "encoding/json"; "html/template")
 
 // a route callback
 type handler func(*Context)bool
@@ -86,28 +51,42 @@ func (self Context) DelHeader(k string) {
 	self.Res.Header().Del(k)
 }
 
-// Return the url query vars
-func (self Context) GetQuery() url.Values {
+// Return the url query vars, if body is true, then this function will parse
+// the request body as x-www-form-urlencoded .
+func (self Context) GetQuery(body bool) url.Values {
+	if body {
+		body, _ := ioutil.ReadAll(self.Req.Body)
+		vals, _ := url.ParseQuery(string(body))
+		return vals
+	}
 	return self.Req.URL.Query()
+}
+
+// Limit the size of the request body .
+func (self Context) LimitBody(max int64) {
+	self.Req.Body = http.MaxBytesReader(self.Res, self.Req.Body, max)
 }
 
 // Read the request body into the provided variable, it will read the body as json
 // if the specified "v" isn't ([]byte, io.Writer) .
-func (self Context) GetBody(v interface{}, max int64) (err error) {
+func (self Context) GetBody(v interface{}) (err error) {
 	switch v.(type) {
-		case []byte:
-			_, err = http.MaxBytesReader(self.Res, self.Req.Body, max).Read(v.([]byte))
+		case *[]byte:
+			buf := v.(*[]byte)
+			(*buf), err = ioutil.ReadAll(self.Req.Body)
+			_ = buf
 		case io.Writer:
-			_, err = io.Copy(v.(io.Writer), http.MaxBytesReader(self.Res, self.Req.Body, max))
+			_, err = io.Copy(v.(io.Writer), self.Req.Body)
 		default:
-			err = json.NewDecoder(http.MaxBytesReader(self.Res, self.Req.Body, max)).Decode(v)
+			err = json.NewDecoder(self.Req.Body).Decode(v)
 	}
 	return err
 }
 
 // Write to the client, this function will detect the type of the data,
 // it will send the data as json if the specified input isn't (string, []byte, *template.Template and io.Reader),
-// it execute the input as html template if the first argument is *template.Template and second argument is template's data .
+// it execute the input as html template if the first argument is *template.Template and second argument is template's data,
+// you MUST LimitBody() to prevent memory-leaks attacks .
 func (self Context) SetBody(d ... interface{}) {
 	if len(d) == 0 {
 		panic("Olive:Context Calling Send() without any arguments !")
