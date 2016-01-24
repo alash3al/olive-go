@@ -4,7 +4,6 @@ Just a lightweight golang web application middleware
 # Author
 [Mohammed Al Ashaal, `a full-stack developer`](http://www.alash3al.xyz)
 
-
 # Install
 `go get github.com/alash3al/olive-go`
 
@@ -25,7 +24,12 @@ func main() {
 		// this feature allows you to run multiple routes with the same properties
 		return false
 	}).ANY("/page/?(.*?)", func(ctx *olive.Context) bool {
-		ctx.SetBody("i'm the parent \n")
+		var body []byte
+		ctx.LimitBody(20)
+		err := ctx.GetBody(&body)
+		ctx.SetBody("this is your input \n")
+		ctx.SetBody(body)
+		_ = err
 		return true
 	}).GET("/page", func(ctx *olive.Context) bool {
 		ctx.SetBody([]byte("hi !"))
@@ -48,6 +52,12 @@ func main() {
 ```
 
 # Changes
+
+**Version 3.0**
+- `Context.GetQuery` now accepts new param called `body` and its type is bool, so you can get the request body as url-decoded as url.Values
+- `Context.GetBody` now accepts one paramater, and you don't need to `make([]byte, ...)` just pass a `&v` where `v` is `[]byte`
+- added `Context.LimitBody` to limit the request body to prevent any memory-leaks attacks while reading it using `Context.GetBody` .
+
 **Version 2.0**
 - removed panics handler
 - removed `Context.AddHeaders()` and `Context.SetHeaders()`
