@@ -41,7 +41,9 @@ func main() {
 			ctx.Res.Write([]byte("api/v1/ok"))
 			return false
 		}).GET("/page/([^/]+)/and/([^/]+)", func(ctx *olive.Context) bool {
-			ctx.Res.Write([]byte("api/v1/ " + ctx.Params[0] + " " + ctx.Params[1]))
+			// Params[0] -> current-hostname
+			// from parent[1] -> the path regex values
+			ctx.Res.Write([]byte("api/v1/ " + ctx.Params[1] + " " + ctx.Params[2]))
 			return false
 		})
 	}).ANY("?.*?", olive.Handler(http.NotFoundHandler(), false)).Listen(":80")
